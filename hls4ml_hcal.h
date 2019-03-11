@@ -4,8 +4,8 @@
 #include "parameters.h"
 
 void hls4ml_hcal(
-        const data32_t *in, // Read-Only Vector
-        data32_t *out       // Output Result
+        data32_t in[STREAMSIZE*N_INPUTS], // Read-Only Vector
+        data32_t out[STREAMSIZE*N_OUTPUTS]       // Output Result
         );
 
 #endif
