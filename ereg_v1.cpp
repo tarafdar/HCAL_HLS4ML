@@ -25,14 +25,6 @@
 #include "nnet_utils/nnet_conv.h"
 #include "nnet_utils/nnet_activation.h"
 
-//hls-fpga-machine-learning insert weights
-#include "weights/w1.h"
-#include "weights/b1.h"
-#include "weights/w2.h"
-#include "weights/b2.h"
-#include "weights/w3.h"
-#include "weights/b3.h"
-
 void ereg_v1(
 		  input_t data[N_INPUTS],
 		  result_t res[N_OUTPUTS])
@@ -40,11 +32,19 @@ void ereg_v1(
 		  //unsigned short &const_size_out)
 {
 
+    //hls-fpga-machine-learning insert weights
+    #include "weights/w1.h"
+    #include "weights/b1.h"
+    #include "weights/w2.h"
+    #include "weights/b2.h"
+    #include "weights/w3.h"
+    #include "weights/b3.h"
+
     //hls-fpga-machine-learning insert IO
     //#pragma HLS ARRAY_RESHAPE variable=data complete dim=0 
     //#pragma HLS ARRAY_RESHAPE variable=res complete dim=0 
     //#pragma HLS INTERFACE ap_vld port=data,res 
-    #pragma HLS PIPELINE 
+    #pragma HLS PIPELINE
 
 
     //const_size_in   = N_INPUTS;
