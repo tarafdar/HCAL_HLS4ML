@@ -1,12 +1,16 @@
-set src_path_root . 
-set part_name  xcku115-flva1517-2-e
+set galapagos_path $::env(GALAPAGOS_PATH)
+set board_name $::env(GALAPAGOS_BOARD_NAME)
+set part_name $::env(GALAPAGOS_PART)
+set src_path_root [pwd] 
+
+cd $galapagos_path/hlsBuild/${board_name}/ip
 
 open_project hls4ml_hcal
 set_top hls4ml_hcal
 open_solution "solution1"
 set_part ${part_name}
 add_files $src_path_root/ereg_v1.cpp
-add_files $src_path_root/hls4ml_hcal.cpp -cflags "-I $src_path_root -I $src_path_root/weights -I $src_path_root/nnet_utils"
+add_files $src_path_root/hls4ml_hcal.cpp -cflags "-I $galapagos_path/middleware/include -I $src_path_root -I $src_path_root/weights -I $src_path_root/nnet_utils"
 create_clock -period 250MHz -name default
 config_interface -expose_global
 csynth_design

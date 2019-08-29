@@ -9,7 +9,10 @@
 #include "nnet_utils/nnet_activation.h"
 #include "nnet_utils/nnet_common.h"
 
-#define STREAMSIZE 16384
+//#define STREAMSIZE 16384
+#define TOTALINPUT 16384
+//#define STREAMSIZE 100
+#define STREAMSIZE 1
 
 //hls-fpga-machine-learning insert numbers
 typedef ap_fixed<32,14> accum_default_t;

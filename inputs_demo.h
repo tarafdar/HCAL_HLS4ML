@@ -1,0 +1,5 @@
+#include "parameters.h"
+
+ap_uint<32> input_vals[N_INPUTS*STREAMSIZE] = {
+0x00315c28, 0x0062b851, 0x0094147a, 0x00c570a3, 0x00f6cccc, 0x012828f5, 0x0159851e, 0x018ae147, 0x01bc3d70, 0x01ed9999, 0x021ef5c2
+};
