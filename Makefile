@@ -43,5 +43,5 @@ cpu_node.exe: ereg_v1.o hls4ml_hcal.o cpu_node.cpp
 	$(CXX) $(CXXFLAGS) -I$(SRC_LIB) -I$(GALAPAGOS_PATH)/util/argparse $^ -o $@ $(BOOST_LDFLAGS)  
 
 clean:
-	rm -rf $(GALAPAGOS_PATH)/hlsBuild/$(GALAPAGOS_BOARD)/ip/hls4ml_hcal
+	rm -rf $(GALAPAGOS_PATH)/hlsBuild/$(GALAPAGOS_BOARD_NAME)/ip/hls4ml_hcal
 	rm -rf *.exe 
