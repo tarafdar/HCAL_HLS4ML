@@ -3,8 +3,8 @@ middleware_path = $(GALAPAGOS_PATH)/middleware
 hls_path = $(middleware_path)/hls
 python_path = $(middleware_path)/python
 
-SRC_LIB=$(GALAPAGOS_PATH)/middleware/CPP_lib/Galapagos_lib
-CXXFLAGS = -DCPU -g -std=c++17 -pthread -isystem $(XILINX_VIVADO)/include -I$(GALAPAGOS_PATH)/middleware/include -I$(SRC_LIB) -I../nnet_utils
+SRC_LIB=$(GALAPAGOS_PATH)/middleware/libGalapagos
+CXXFLAGS = -DCPU -O2 -std=c++17 -pthread -isystem $(XILINX_VIVADO)/include -I$(GALAPAGOS_PATH)/middleware/include -I$(SRC_LIB) -I$(GALAPAGOS_PATH)/util/spdlog/include -I../nnet_utils
 
 LDFLAGS = -lpthread
 
@@ -36,12 +36,15 @@ hlsmiddleware:
 	 $(MAKE) -C $(hls_path)
 
 
-heterogeneous_node.exe: ereg_v1.o hls4ml_hcal.o heterogeneous_node.cpp 
-	$(CXX) $(CXXFLAGS) -I$(SRC_LIB) -I$(GALAPAGOS_PATH)/util/argparse $^ -o $@ $(BOOST_LDFLAGS)  
+cpu_send.exe: ereg_v1.o hls4ml_hcal.o cpu_send.cpp
+	$(CXX) $(CXXFLAGS) -I$(SRC_LIB) -I$(GALAPAGOS_PATH)/util/argparse -DCPU -DLOG_LEVEL=0 $^ -o $@ $(BOOST_LDFLAGS)  
 
-cpu_node.exe: ereg_v1.o hls4ml_hcal.o cpu_node.cpp 
-	$(CXX) $(CXXFLAGS) -I$(SRC_LIB) -I$(GALAPAGOS_PATH)/util/argparse $^ -o $@ $(BOOST_LDFLAGS)  
+cpu_compute.exe: ereg_v1.o hls4ml_hcal.o cpu_compute.cpp
+	$(CXX) $(CXXFLAGS) -I$(SRC_LIB) -I$(GALAPAGOS_PATH)/util/argparse -DCPU -DLOG_LEVEL=0 $^ -o $@ $(BOOST_LDFLAGS)  
+
+cpu_node.exe: ereg_v1.o hls4ml_hcal.o cpu_node.cpp
+	$(CXX) $(CXXFLAGS) -I$(SRC_LIB) -I$(GALAPAGOS_PATH)/util/argparse -DCPU -DLOG_LEVEL=0 $^ -o $@ $(BOOST_LDFLAGS)
 
 clean:
 	rm -rf $(GALAPAGOS_PATH)/hlsBuild/$(GALAPAGOS_BOARD_NAME)/ip/hls4ml_hcal
-	rm -rf *.exe 
+	rm -rf *.exe  *.txt *.o

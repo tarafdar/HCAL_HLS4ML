@@ -4,17 +4,21 @@
 #include <thread>
 #include <chrono>
 #include <string>
+#include "galapagos_net_tcp.hpp"
 #include "galapagos_node.hpp"
 #include "hls4ml_hcal.h"
 
 
+#define NUM_KERNELS 3
+
 std::shared_ptr<spdlog::logger> my_logger;
 typedef ap_uint<64> T;
+#define GALAPAGOS_PORT 7
 
 
 int main(int argc, const char** argv){
 
-    my_logger = spdlog::basic_logger_mt("basic_logger", "node_log.txt"); 
+    my_logger = spdlog::basic_logger_mt("basic_logger", "send_log.txt"); 
 #if LOG_LEVEL==0
     spdlog::set_level(spdlog::level::off); // Set global log level to off
 #elif LOG_LEVEL==1
@@ -25,13 +29,24 @@ int main(int argc, const char** argv){
     spdlog::flush_every(std::chrono::seconds(2));
     my_logger->info("Starting Send");
     std::vector <std::string> kern_info;
-    kern_info.push_back(std::string("10.0.0.1"));
-    kern_info.push_back(std::string("10.0.0.1"));
+    std::string source_ip_str("10.0.0.1");
+    std::string dest_ip_str("10.0.0.2");
+    kern_info.push_back(source_ip_str);
+    kern_info.push_back(dest_ip_str);
     
+    galapagos::net::tcp <T> my_tcp(
+                    GALAPAGOS_PORT, 
+                    kern_info, 
+                    source_ip_str, 
+                    my_logger
+                    );
+    std::vector < galapagos::external_driver<T> * > ext_drivers;
+    ext_drivers.push_back(&my_tcp);
 
-    galapagos::node<ap_uint <64> > node(kern_info, std::string("10.0.0.1"), std::vector<galapagos::external_driver <ap_uint<64> > * >(), my_logger);
+
+
+    galapagos::node <T> node(kern_info, source_ip_str, ext_drivers, my_logger);
     node.add_kernel(0, kern_send);
-    node.add_kernel(1, hls4ml_hcal);
 
     node.start();
     node.end();

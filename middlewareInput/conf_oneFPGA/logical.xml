@@ -23,23 +23,6 @@
             <name> out_r </name>
         </m_axis>
     </kernel>
-    <kernel> kern_recv 
-        <vendor> xilinx.com </vendor>
-        <version> 1.0 </version>
-        <lib> hls </lib>
-        <num> 2 </num>
-        <rep> 1 </rep>
-        <clk> ap_clk </clk>
-        <aresetn> ap_rst_n </aresetn>
-        <s_axis>
-            <scope> global </scope>
-            <name> in_r </name>
-        </s_axis>
-        <m_axis>
-            <scope> global </scope>
-            <name> out_r </name>
-        </m_axis>
-    </kernel>
     <kernel> hls4ml_hcal 
         <vendor> xilinx.com </vendor>
         <version> 1.0 </version>
@@ -56,6 +39,6 @@
             <scope> global </scope>
             <name> out_r </name>
         </m_axis>
-        <id_port> id_V </id_port>
+        <id_port> id </id_port>
     </kernel>
 </cluster>
