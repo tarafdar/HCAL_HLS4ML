@@ -24,8 +24,14 @@ hls4ml_hcal.o: hls4ml_hcal.cpp
 ereg_v1.o: ereg_v1.cpp
 	$(CXX) $(CXXFLAGS) -c ereg_v1.cpp -o $@ $(BOOST_LDFLAGS)
 
-hls:
-	vivado_hls generate_hls.tcl
+
+hls_ip:
+	vivado_hls generate_ip.tcl
+
+hls_send:
+	vivado_hls generate_send.tcl
+
+hls: hls_ip hls_send
 
 middleware:
 	python3.5 ${python_path}/globalFPGAParser.py --logicalFile=${LOGICALFILE} \
@@ -36,8 +42,8 @@ hlsmiddleware:
 	 $(MAKE) -C $(hls_path)
 
 
-heterogeneous_node.exe: ereg_v1.o hls4ml_hcal.o heterogeneous_node.cpp 
-	$(CXX) $(CXXFLAGS) -I$(SRC_LIB) -I$(GALAPAGOS_PATH)/util/argparse $^ -o $@ $(BOOST_LDFLAGS)  
+cpu_send.exe: kern_send.cpp cpu_send.cpp
+	$(CXX) $(CXXFLAGS) -I$(SRC_LIB) -I$(GALAPAGOS_PATH)/util/argparse -DCPU -DLOG_LEVEL=O $^ -o $@ $(BOOST_LDFLAGS)  
 
 cpu_node.exe: ereg_v1.o hls4ml_hcal.o cpu_node.cpp 
 	$(CXX) $(CXXFLAGS) -I$(SRC_LIB) -I$(GALAPAGOS_PATH)/util/argparse $^ -o $@ $(BOOST_LDFLAGS)  

@@ -6,73 +6,92 @@
 #include <stdlib.h>
 #include <math.h>
 
-#ifdef CPU
-#include <chrono>
-#endif
 
-#define NUM_INTERMEDIATE_HOPS 2
-
+#include "ap_utils.h"
 #include "hls4ml_hcal.h"
 #include "ereg_v1.h"
 
-#define MAX_FLITS_TRANS 170
 
-
-void kern_send(short id, galapagos_stream * in, galapagos_stream  * out)
+void ingress(
+        galapagos_interface * in, 
+        hls::stream<result_t > & to_run
+        )
 {
 #pragma HLS INTERFACE ap_ctrl_none port=return
-#pragma HLS INTERFACE axis register both port=out
 #pragma HLS INTERFACE axis register both port=in
-    
-    int num_flits = STREAMSIZE*N_INPUTS;
-    
-    galapagos_stream_packet gp;
-    gp.id = id;
+#pragma HLS INTERFACE axis register both port=to_run
+#pragma HLS PIPELINE II=1
 
-    #include "inputs_demo.h"
+    if(!in->empty()){
+        input_t data;
+        galapagos_packet gp;
+        gp = in->read();
+        data(31,0) = gp.data(31,0);
+        to_run.write(data);
+    }
 
-    std::cout <<"******************************" << std::endl << "Input:" << std::endl << std::endl;
+}
 
-#ifdef CPU
-    auto start = std::chrono::high_resolution_clock::now();
-#endif
-    for(int j=0; j<num_flits; j++){
-        gp.dest = 1; // FIRST
-        gp.data = 0;
-        (gp.data)(31,0) = input_vals[j];
-        if(j==(num_flits -1))
+void run(
+        hls::stream<input_t> & from_ingress, // Read-Only Vector
+        hls::stream<result_t > & to_egress
+        )
+{
+#pragma HLS INTERFACE ap_ctrl_none port=return
+#pragma HLS INTERFACE axis register both port=from_ingress
+#pragma HLS INTERFACE axis register both port=to_egress
+
+    input_t in_buf[N_INPUTS];
+#pragma HLS ARRAY_PARTITION variable=in_buf complete dim=1
+    result_t out_buf[N_OUTPUTS];
+#pragma HLS ARRAY_PARTITION variable=out_buf complete dim=1
+
+    galapagos_packet gp;
+    for (int i = 0; i < N_INPUTS; i++) {
+#pragma HLS PIPELINE II=1
+        in_buf[i] = from_ingress.read();
+    }
+
+    ereg_v1(in_buf,out_buf);
+    for (int i=0; i<N_OUTPUTS; i++)
+#pragma HLS PIPELINE II=1
+        to_egress.write(out_buf[i]);
+
+
+}
+
+void egress(
+        short id,
+        hls::stream<result_t >  & from_run,
+        galapagos_interface * out
+        )
+{
+#pragma HLS INTERFACE ap_ctrl_none port=return
+#pragma HLS INTERFACE axis register both port=from_run
+#pragma HLS INTERFACE axis register both port=out
+#pragma HLS PIPELINE II=1
+
+    static int i=0;
+
+    if(!from_run.empty()){
+        galapagos_packet gp;
+        gp.user = N_OUTPUTS * STREAMSIZE;
+        result_t res = from_run.read();
+        gp.data(31,0) = res(31,0);
+        gp.data(63, 32) = 0;
+        gp.keep = 0xff;
+        gp.dest = id-1;
+        gp.id = id;
+        if (i == N_OUTPUTS * STREAMSIZE - 1){
             gp.last = 1;
-        else
+            i=0;
+        }
+        else{
             gp.last = 0;
-        std::cout <<"int[" << std::dec << j << "]: " << std::hex << gp.data << std::endl;
+            i++;
+        }
         out->write(gp);
     }
-#ifdef CPU
-    auto send = std::chrono::high_resolution_clock::now();
-#endif
-
-
-    std::cout << std::endl << std::endl << std::endl;
-    std::cout <<"****************************** WRITTEN ALL DATA TO NETWORK, WAITING FOR FPGA TO PROCESS AND RETURN ****************" << std::endl;
-    std::cout << std::endl << std::endl << std::endl;
-
-    num_flits = STREAMSIZE*N_OUTPUTS;
-   
-    std::cout <<"******************************" << std::endl << "Output:" << std::endl << std::endl;
-    //num_flits = STREAMSIZE*N_INPUTS;
-    for(int j=0; j<num_flits; j++){
-        gp = in->read();
-        std::cout <<"out[" << std::dec << j << "]: " << std::hex << gp.data << std::endl;
-
-    }
-#ifdef CPU
-    auto recv = std::chrono::high_resolution_clock::now();
-#endif 
-#ifdef CPU
-    std::cout << std::endl << std::endl;
-    std::cout << "Send/prep time:  " << ((std::chrono::duration<double>)(send - start)).count() << " s" << std::endl;
-    std::cout << "   HLS4ML time:  " << ((std::chrono::duration<double>)(recv - send)).count() << " s" << std::endl;
-#endif
 
 }
 
@@ -101,51 +120,38 @@ void kern_recv(short id, galapagos_stream * in, galapagos_stream  * out)
     }
 }
 
+
 void hls4ml_hcal(
-        const ap_uint<8> id,
-        galapagos_stream *in, // Read-Only Vector
-        galapagos_stream *out       // Output Result
+        short id,
+        galapagos_interface *in, // Read-Only Vector
+        galapagos_interface *out       // Output Result
         )
 {
+#pragma HLS DATAFLOW
 #pragma HLS INTERFACE ap_ctrl_none port=return
 #pragma HLS INTERFACE axis register both port=out
 #pragma HLS INTERFACE axis register both port=in
-    
-    galapagos_stream_packet gp;
 
-    ap_uint <1> last = 0;
+    galapagos_interface to_ingress;
 
-    input_t in_buf[STREAMSIZE][N_INPUTS];
-    result_t out_buf[STREAMSIZE][N_OUTPUTS];
-    #pragma HLS ARRAY_PARTITION variable=in_buf complete dim=2
-    #pragma HLS ARRAY_PARTITION variable=out_buf complete dim=2 
+    hls::stream<result_t> res;
+    galapagos_packet gp;
 
-    reading: for (int i = 0; i < STREAMSIZE; i++) {
-        for (int j = 0; j < N_INPUTS; j++) {
-            gp = in->read();
-            data32_t tmp = 0;
-            tmp(31,0) = (gp.data)(31,0);
-            in_buf[i][j] = (input_t)(tmp);
-        }
-    }
+    //    serialize(
+    //            in,
+    //            to_ingress
+    //            );
 
-    short dest = gp.id;
-   
-    for (int i = 0; i < STREAMSIZE; i++) {
-        #pragma HLS PIPELINE
-        hls4ml: ereg_v1(in_buf[i],out_buf[i]);
-    }
+    ingress(
+            in, // Read-Only Vector
+            res
+           );
 
-    int curr_index=0;
-    writing: for (int i = 0; i < STREAMSIZE; i++) {
-        for (int j = 0; j < N_OUTPUTS; j++) {
-            gp.data = 0;
-            (gp.data)(31,0) = ((data32_t)(out_buf[i][j]))(31,0);
-            gp.dest = dest;
-            gp.last = (i==STREAMSIZE-1 && j==N_OUTPUTS-1 ? 1 : 0);
-            gp.id = 1;
-            out->write(gp);
-        }
-    }
+    egress(
+            id,
+            res, // Read-Only Vector
+            out
+          );
+
 
 }
