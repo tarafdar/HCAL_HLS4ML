@@ -4,7 +4,7 @@ hls_path = $(middleware_path)/hls
 python_path = $(middleware_path)/python
 
 SRC_LIB=$(GALAPAGOS_PATH)/middleware/CPP_lib/Galapagos_lib
-CXXFLAGS = -DCPU -g -std=c++17 -pthread -isystem $(XILINX_VIVADO)/include -I$(GALAPAGOS_PATH)/middleware/include -I$(SRC_LIB) -I../nnet_utils
+CXXFLAGS = -DCPU -O2 -std=c++17 -pthread -isystem $(XILINX_VIVADO)/include -I$(GALAPAGOS_PATH)/middleware/include -I$(GALAPAGOS_PATH)/middleware/libGalapagos -I$(GALAPAGOS_PATH)/util/spdlog/include -I$(SRC_LIB) -I../nnet_utils
 
 LDFLAGS = -lpthread
 
@@ -43,11 +43,18 @@ hlsmiddleware:
 
 
 cpu_send.exe: kern_send.cpp cpu_send.cpp
-	$(CXX) $(CXXFLAGS) -I$(SRC_LIB) -I$(GALAPAGOS_PATH)/util/argparse -DCPU -DLOG_LEVEL=O $^ -o $@ $(BOOST_LDFLAGS)  
+	$(CXX) $(CXXFLAGS) -I$(SRC_LIB) -I$(GALAPAGOS_PATH)/util/argparse -DCPU -DLOG_LEVEL=0 $^ -o $@ $(BOOST_LDFLAGS)  
+
+mb_cpu_send.exe: mb.cpp mb_cpu_send.cpp
+	$(CXX) $(CXXFLAGS) -I$(SRC_LIB) -I$(GALAPAGOS_PATH)/util/argparse -DCPU -DLOG_LEVEL=0 $^ -o $@ $(BOOST_LDFLAGS)  
+
+mb_fpga_send.exe: mb.cpp mb_fpga_send.cpp
+	$(CXX) $(CXXFLAGS) -I$(SRC_LIB) -I$(GALAPAGOS_PATH)/util/argparse -DCPU -DLOG_LEVEL=2 $^ -o $@ $(BOOST_LDFLAGS)  
 
 cpu_node.exe: ereg_v1.o hls4ml_hcal.o cpu_node.cpp 
 	$(CXX) $(CXXFLAGS) -I$(SRC_LIB) -I$(GALAPAGOS_PATH)/util/argparse $^ -o $@ $(BOOST_LDFLAGS)  
 
 clean:
 	rm -rf *.o myproject_prj
-	rm -rf *.exe 
+	rm -rf *.exe
+	rm -rf *.txt

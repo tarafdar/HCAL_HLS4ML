@@ -5,6 +5,7 @@
 #include <chrono>
 #include <string>
 #include "galapagos_net_tcp.hpp"
+#include "galapagos_net_udp.hpp"
 #include "galapagos_node.hpp"
 #include "hls4ml_send.h"
 
@@ -12,7 +13,7 @@
 #define NUM_KERNELS 3
 
 std::shared_ptr<spdlog::logger> my_logger;
-typedef ap_uint<64> T;
+typedef ap_uint<PACKET_DATA_LENGTH> T;
 #define GALAPAGOS_PORT 7
 
 
@@ -29,19 +30,30 @@ int main(int argc, const char** argv){
     spdlog::flush_every(std::chrono::seconds(2));
     my_logger->info("Starting Send");
     std::vector <std::string> kern_info;
-    std::string source_ip_str("10.1.2.155");
-    std::string dest_ip_str("10.1.2.156");
+    std::string source_ip_str("10.1.2.102");
+    std::string dest_ip_str("10.1.2.237");
     kern_info.push_back(source_ip_str);
     kern_info.push_back(dest_ip_str);
-    
-    galapagos::net::tcp <T> my_tcp(
+#ifdef TCP 
+    galapagos::net::tcp <T> net_driver(
                     GALAPAGOS_PORT, 
                     kern_info, 
                     source_ip_str, 
                     my_logger
                     );
+#else
+    galapagos::net::udp <T> net_driver(
+                    0x280, 
+                    kern_info, 
+                    source_ip_str, 
+                    my_logger
+                    );
+
+
+
+#endif
     std::vector < galapagos::external_driver<T> * > ext_drivers;
-    ext_drivers.push_back(&my_tcp);
+    ext_drivers.push_back(&net_driver);
 
 
 
