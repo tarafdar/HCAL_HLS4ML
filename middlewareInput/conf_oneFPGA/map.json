@@ -1,17 +1,24 @@
 
-[
-   {
-      "type": "sw",
-      "kernel": "0",
-      "mac": "0c:c4:7a:88:c0:47",
-      "ip": "10.1.2.155"
-   },
-   {
-      "board": "adm-8k5-debug",
-      "comm": "tcp",
-      "type": "hw",
-      "kernel": "1",
-      "mac": "fa:16:3e:55:ca:02",
-      "ip": "10.1.2.156"
-   }
-]
+{
+  "cluster":{
+	"comm": "tcp",
+	"node":[
+   		{
+   		   "type": "sw",
+   		   "kernel": "0",
+   		   "mac": "0c:c4:7a:88:c0:47",
+   		   "ip": "10.1.2.155"
+   		},
+   		{
+   		   "board": "adm-8k5-debug",
+   		   "comm": "tcp",
+   		   "type": "hw",
+   		   "kernel": "1",
+   		   "mac": "fa:16:3e:55:ca:02",
+   		   "ip": "10.1.2.156"
+   		}
+
+	]
+
+  }
+}
